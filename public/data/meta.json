@@ -1,0 +1,10 @@
+{
+  "total": 26069,
+  "per_page": 200,
+  "prefix_len": 2,
+  "prefix2_limit": 500,
+  "detail_shard": "md5_hex[:2] (00-ff)",
+  "batch_sharding": true,
+  "max_files": 256,
+  "lookup_shard_available": true
+}

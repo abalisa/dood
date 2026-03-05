@@ -1,0 +1,13 @@
+{
+  "status": "completed",
+  "started_at": "2026-03-05 15:58:34",
+  "completed_at": "2026-03-05 15:59:18",
+  "execution_time_seconds": 43.870383,
+  "total_videos": 26069,
+  "preserved_titles": 0,
+  "new_videos": 26069,
+  "sources_fetched": [
+    "doodstream",
+    "lulustream"
+  ]
+}

@@ -1,107 +1,110 @@
-# doodstream-web 🎥
+# Video Site Project
 
-An SSR video streaming frontend which uses doodstream.com as a backend. It is built using [Next.js](https://nextjs.org/) and [Tailwind CSS](https://tailwindcss.com/).
+Proyek ini adalah situs web video statis yang dihosting di Cloudflare Pages dengan fungsionalitas serverless menggunakan Cloudflare Functions.
 
-## Features
+## Struktur Proyek
 
--   🌐 SSR (Server Side Rendering)
--   📱 Responsive design
--   🌙 Dark mode support
--   🔍 Search videos by name
--   🗂️ Folders as Channels
--   ▶️ Video player
--   📝 Video subtitles
--   📥 Video download
--   ❤ Client side like/dislike videos
+- `/public`: Berisi file statis (HTML, images, data).
+- `/functions`: Berisi logika serverless (Cloudflare Functions).
+- `wrangler.toml`: Konfigurasi untuk Cloudflare Wrangler.
 
-## Live Demo
+## Cara Deploy ke Cloudflare
 
-A live demo of the project is available at [https://doodstream-web.pages.dev](https://doodstream-web.pages.dev/).
+### 1. Melalui Cloudflare Dashboard (Direkomendasikan)
 
-## Configuration
+Metode ini paling mudah jika kode Anda ada di GitHub atau GitLab.
 
-The following environment variables are required to run the project:
+1.  Login ke [Cloudflare Dashboard](https://dash.cloudflare.com/).
+2.  Buka **Workers & Pages** > **Create application** > **Pages** > **Connect to Git**.
+3.  Pilih repositori Anda.
+4.  Di bagian **Build settings**:
+    *   **Framework preset**: None
+    *   **Build command**: (Kosongkan)
+    *   **Build output directory**: `public`
+5.  Klik **Save and Deploy**.
+6.  Cloudflare akan secara otomatis mendeteksi folder `functions` dan men-deploy-nya sebagai Functions.
 
--   `DOODSTREAM_API_KEY`: API key for doodstream.com
--   `DOODSTREAM_API_URL`: API URL for doodstream.com (default: `https://doodapi.com`)
--   `SITENAME`: Name of the website (default: `DoodWeb`)
+---
 
-## Development
+### 2. Melalui Wrangler CLI
 
-1. Clone the repository
+Metode ini berguna untuk deployment manual langsung dari terminal.
 
-```bash
-git clone <repo-url> doodstream-web
-cd doodstream-web
-```
+1.  **Install Wrangler:**
+    ```bash
+    npm install -g wrangler
+    ```
 
-2. Install dependencies
+2.  **Login ke Cloudflare:**
+    ```bash
+    wrangler login
+    ```
 
-```bash
-npm install
-```
+3.  **Deploy Proyek:**
+    Jalankan perintah berikut di root direktori proyek:
+    ```bash
+    wrangler pages deploy ./public
+    ```
+    *Wrangler akan otomatis mengunggah isi folder `./public` dan memproses folder `functions` di root.*
 
-3. Run the development server
+---
 
-```bash
-npm run dev
-```
+## Pengembangan Lokal
 
-4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-## Deployment
-
-1. Clone the repository
-
-```bash
-git clone <repo-url> doodstream-web
-cd doodstream-web
-```
-
-2. Install dependencies
+Untuk menjalankan proyek secara lokal menggunakan Wrangler:
 
 ```bash
-npm install
+wrangler pages dev ./public
 ```
+Proyek akan berjalan di `http://localhost:8788`.
+## Otomatisasi Pembaruan Data
 
-3. Build the project
+Skrip sedot.py ...
+## Otomatisasi Pembaruan Data
 
-```bash
-npm run build
-```
+Skrip `sedot.py` digunakan untuk mengambil dan memperbarui berkas JSON statis
+di bawah `public/data`. Untuk menjaga data tetap up‑to‑date, jalankan skrip satu
+kali setiap 24 jam. Ada dua pendekatan:
 
-4. Start the server
+1. **Loop internal** – biarkan skrip terus berjalan dan tidur di antara pengambilan:
+   ```bash
+   python sedot.py --loop        # interval default 24 jam
+   python sedot.py --loop 12     # interval 12 jam
+   ```
+   Skrip akan mencetak log ke terminal dan menulis timestamp terakhir ke file
+   `last_fetch.txt`.
 
-```bash
-npm run start
-```
+2. **Penjadwalan eksternal (cron/dll)** – gunakan scheduler sistem untuk memanggil
+   skrip pada waktu yang Anda tentukan. Contoh cron:
+   ```cron
+   0 3 * * * /usr/bin/python3 /path/to/sedot.py >> /var/log/sedot.log 2>&1
+   ```
+   Ganti path dan jam sesuai kebutuhan.
 
-5. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Kedua metode akan menghasilkan file baru di `public/data`, lalu file tersebut
+dapat dideploy kembali ke Cloudflare Pages.
 
-## Deployment on Cloudflare Pages
+### Otomasi dengan GitHub Actions
 
-1. Fork the [repository](https://github.com/viperadnan-git/doodstream-web/fork) on GitHub.
-2. Create a new project on [Cloudflare Pages](https://pages.cloudflare.com/).
-3. Connect your GitHub account with Cloudflare Pages.
-4. Select the forked repository and click on `Begin Setup`.
-5. Select `nextjs` as the build preset.
-6. Add required environment variables (`DOODSTREAM_API_KEY`).
-7. Click on `Save and Deploy` to start the deployment. This first deployment will not be fully functional as the next step is also necessary.
-8. In your Pages project, go to Settings > Functions > Compatibility Flags.
-9. Configure a nodejs_compat flag for both production and preview.
-10. Go to the Deployments tab, open the latest deployment and click on Manage Deployment > Retry Deployments.
-11. Click on `Visit Site` to open the website.
+Anda juga bisa menyerahkan semua pekerjaan ke GitHub Actions sehingga
+proses pengambil data dan commit berjalan di server GitHub setiap hari
+(jadi Anda tidak perlu meninggalkan mesin sendiri berjalan atau membuka
+Codespace). Berikut langkah umum:
 
-More information about deploying Next.js apps on Cloudflare Pages is available [here](https://developers.cloudflare.com/pages/framework-guides/deploy-a-nextjs-site/#deploy-via-the-cloudflare-dashboard).
+1. Buat file workflow di `.github/workflows/update-data.yml` (contoh file
+   sudah disediakan di repo).
+2. Atur *schedule* (cron) di dalam workflow sesuai kebutuhan. Defaultnya
+   adalah `0 3 * * *` (pukul 03:00 UTC setiap hari).
+3. Pastikan skrip `sedot.py` dan dependensi (`aiohttp`) sudah berada di
+   repo; workflow akan menginstalnya pada runner.
+4. Workflow akan menjalankan `python sedot.py --sync`, mengidentifikasi
+   perubahan di `public/data`, dan otomatis commit/push bila ada file
+   baru atau ter-update.
+5. (Opsional) tambahkan langkah setelah commit untuk menjalankan `wrangler
+   pages deploy ./public` jika Anda ingin deployment Pages dilakukan
+   langsung dari Actions. Gunakan secret `CF_API_TOKEN` untuk autentikasi.
 
-## Contributing
+Dengan pendekatan ini, data statis akan diperbarui setiap 24 jam (atau
+interval lain yang ditentukan) dan commit hasilnya ke repository tanpa
+intervensi manual.
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-## Disclaimer
-
-This project is not affiliated with https://doodstream.com in any way. It is just a frontend for their API.
-
-## License
-
-This project is licensed under the GPL-3.0 License - see the [LICENSE](./LICENSE) file for details.

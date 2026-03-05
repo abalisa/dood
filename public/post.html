@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menampilkan Data JSON dan Video</title>
+    <style>
+        .result-item img {
+            max-width: 100%;
+            height: auto;
+        }
+        #custom-player {
+            width: 100%;
+            height: 500px;
+            display: none; /* Sembunyikan player sampai dipanggil */
+        }
+    </style>
+</head>
+<body>
+    <h1>Data dari API</h1>
+    <input type="text" id="searchTerm" placeholder="Masukkan kata kunci...">
+    <input type="text" id="customDomain" placeholder="Masukkan domain (pisahkan dengan koma)" value="puki.pro">
+    <input type="text" id="customRandomTitles" placeholder="Masukkan judul acak (pisahkan dengan koma)">
+    <button id="searchButton">Cari</button>
+    <button id="listButton">Tampilkan Semua</button>
+    <div id="result" class="result-item"></div>
+    <div id="custom-player"></div>
+
+    <script>
+        const defaultRandomTitles = [
+            "Video Doodstream",
+            "Indo Hijab", 
+            "viral Dood",
+            "Terbaru Update", 
+            "Streaming",
+            "Ngentod abg"
+        ];
+
+        document.getElementById('searchButton').addEventListener('click', function() {
+            const searchTerm = document.getElementById('searchTerm').value;
+            const url = `https://scrapy-01q.pages.dev/api/search?q=${encodeURIComponent(searchTerm)}`;
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    displayResults(data.result);
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                    document.getElementById('result').innerHTML = 'Terjadi kesalahan saat mengambil data.';
+                });
+        });
+
+        document.getElementById('listButton').addEventListener('click', function() {
+            const url = 'https://do.onlinepengangguran.workers.dev/list';
+            
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.result && data.result.files) {
+                        displayResults(data.result.files);
+                    } else {
+                        document.getElementById('result').innerHTML = 'Tidak ada hasil ditemukan.';
+                    }
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                    document.getElementById('result').innerHTML = 'Terjadi kesalahan saat mengambil data.';
+                });
+        });
+
+        function cleanTitle(title) {
+            const forbiddenWords = ['bokep', 'memek', 'ngentot', 'ngewe', 'colmek', 'pepek', 'perkosa'];
+            let cleanedTitle = title;
+
+            forbiddenWords.forEach(word => {
+                const regex = new RegExp(`\\b${word}\\b`, 'gi');
+                cleanedTitle = cleanedTitle.replace(regex, '');
+            });
+
+            const words = cleanedTitle.trim().split(/\s+/);
+            const maxWords = 3;
+            let result = [];
+
+            for (let i = 0; i < words.length; i++) {
+                if (result.length < maxWords) {
+                    result.push(words[i]);
+                } else {
+                    if (i < words.length - 1 && (words[i] === 'dan' || words[i] === 'atau' || words[i] === 'serta')) {
+                        result.push(words[i]);
+                        break;
+                    }
+                    break;
+                }
+            }
+
+            return result.join(' ');
+        }
+
+        function getRandomTitle() {
+            const customTitlesInput = document.getElementById('customRandomTitles').value;
+            const customTitles = customTitlesInput.split(',').map(title => title.trim()).filter(title => title);
+            const titlesToUse = customTitles.length > 0 ? customTitles : defaultRandomTitles;
+            const randomIndex = Math.floor(Math.random() * titlesToUse.length);
+            return titlesToUse[randomIndex];
+        }
+
+        function displayResults(results) {
+            const resultDiv = document.getElementById('result');
+            const customDomain = document.getElementById('customDomain').value || 'puki.pro';
+            resultDiv.innerHTML = '';
+
+            if (results && results.length > 0) {
+                const allResultsDiv = document.createElement('div');
+                allResultsDiv.className = 'result-item';
+
+                results.forEach(result => {
+                    const cleanedTitle = cleanTitle(result.title);
+                    const randomTitle = getRandomTitle();
+                    const link = `${customDomain}/e/${result.file_code}`;
+
+                    const resultItem = document.createElement('div');
+                    resultItem.innerHTML = `
+                        <p>${cleanedTitle}  ${randomTitle}<br>
+                         ${link}</p>
+                    `;
+                    allResultsDiv.appendChild(resultItem);
+                });
+
+                resultDiv.appendChild(allResultsDiv);
+            } else {
+                resultDiv.innerHTML = 'Tidak ada hasil ditemukan.';
+            }
+        }
+    </script>
+</body>
+</html>
